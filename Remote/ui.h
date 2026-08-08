@@ -20,7 +20,6 @@ bool isTransient(ScreenState s);
 void initDisplay(void);
 
 /* ---- draw helpers ---- */
-void drawBatteryIcon(int x, int y, int8_t percent);
 void drawSignalBars(int x, int y, int8_t percent);
 void drawSpeaker(int cx, int cy);
 void drawIcon(uint8_t cmd, int cx, int cy);
@@ -31,9 +30,7 @@ void drawSearchScreen(uint32_t now);
 void drawHomeScreen(uint32_t now);
 void drawButtonScreen(uint32_t now);
 void drawErrorScreen(uint32_t now);
-void drawBatteryScreen(uint32_t now);
 void drawAboutScreen(uint32_t now);
-void drawSleepScreen(uint32_t now);
 
 /* Throttled frame router - called from updateScreen(). */
 void drawFrame(void);

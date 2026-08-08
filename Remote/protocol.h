@@ -15,7 +15,7 @@
  *   9       1     command      = one of Command
  *   10      1     flags        = PacketFlags
  *   11      2     crc16        = CRC-16/XMODEM over bytes 0..10 + 13..18
- *   13      2     fwVersion    = firmware version (or STATUS payload, see below)
+ *   13      2     fwVersion    = firmware version
  *   15      4     counter      = global monotonic counter (ordering/duplicate)
  *   19      1     checksum     = 8-bit XOR of bytes 0..18
  *
@@ -25,12 +25,6 @@
  * This is obfuscation-grade security (no crypto hardware involved); treat it
  * as "simple packet encryption with a configurable key" as required.
  *
- * STATUS command payload packing (CMD_STATUS):
- *   timestampMs = battery voltage in millivolts
- *   fwVersion   = (battery percent << 8) | link quality percent (0..100)
- *                 battery percent 255 means "running on USB".
- *                 The NRF24L01 has no real RSSI; the low byte carries the
- *                 remote's link quality estimated from TX/ACK success.
  */
 #pragma once
 
@@ -58,7 +52,7 @@ enum Command : uint8_t {
   CMD_HEARTBEAT = 0x07,  /* remote -> receiver keep-alive (every 5 s)        */
   CMD_CONNECT   = 0x08,  /* remote -> receiver link request while searching  */
   CMD_ACK       = 0x09,  /* receiver -> remote acknowledgement payload       */
-  CMD_STATUS    = 0x0A,  /* remote -> receiver battery + link quality report */
+  CMD_STATUS    = 0x0A,  /* reserved diagnostic command                       */
 };
 
 /* --------------------------------- flags --------------------------------- */

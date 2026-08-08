@@ -13,7 +13,7 @@ struct ButtonDef {
   uint8_t pin;
   uint8_t command;    /* short-press command                       */
   bool    repeat;     /* enable hold-to-repeat                     */
-  uint8_t longAction; /* LONG_ACTION_NONE / _BATTERY / _ABOUT      */
+  uint8_t longAction; /* LONG_ACTION_NONE / _ABOUT                 */
 };
 
 struct ButtonState {

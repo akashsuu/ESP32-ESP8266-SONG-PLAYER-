@@ -34,9 +34,6 @@ static const uint8_t ENCRYPTION_KEY[ENCRYPTION_KEY_LEN] = {
 #define RF_CRC_LENGTH             RF24_CRC_16
 #define RF_RETRY_DELAY            5              /* 5 x 250 us = 1.25 ms       */
 #define RF_RETRY_COUNT            15             /* total attempts             */
-#define NRF_POWER_PIN             -1             /* GPIO cutting NRF VCC via a
-                                                    P-channel MOSFET during
-                                                    deep sleep; -1 = disabled  */
 
 /* Same address on both ends; byte 0 must never be 0x00. */
 static const uint8_t RECEIVER_ADDRESS[5] = { 0x52, 0x58, 0x31, 0x52, 0x44 }; /* "RX1RD" */
@@ -54,7 +51,7 @@ static const uint8_t RECEIVER_ADDRESS[5] = { 0x52, 0x58, 0x31, 0x52, 0x44 }; /* 
 #define OLED_REFRESH_MS           80             /* ~12 fps framebuffer draw  */
 
 /* -------------------------------- buttons -------------------------------- */
-/* All six pins are RTC-capable so they can wake the ESP32 from deep sleep.   */
+/* Buttons are active-low and use the ESP32 internal pull-ups.                */
 
 #define BTN_NEXT                  32
 #define BTN_PREVIOUS              33
@@ -69,20 +66,7 @@ static const uint8_t RECEIVER_ADDRESS[5] = { 0x52, 0x58, 0x31, 0x52, 0x44 }; /* 
 #define REPEAT_INTERVAL_MS        150            /* hold-to-repeat rate       */
 
 #define LONG_ACTION_NONE          0
-#define LONG_ACTION_BATTERY       1              /* long press Mute           */
-#define LONG_ACTION_ABOUT         2              /* long press Play/Pause     */
-
-#define BUTTON_WAKE_MASK          ((1ULL << BTN_NEXT) | (1ULL << BTN_PREVIOUS) | \
-                                   (1ULL << BTN_PLAY) | (1ULL << BTN_VOL_UP) |   \
-                                   (1ULL << BTN_VOL_DOWN) | (1ULL << BTN_MUTE))
-
-/* -------------------------------- battery --------------------------------- */
-
-#define BAT_ADC_PIN               36             /* ADC1_CH6 (SENSOR_VP)       */
-#define BAT_DIVIDER_RATIO         2.0f           /* (R1+R2)/R2 with 100k/100k  */
-#define BAT_MIN_PLAUSIBLE_MV      2500u          /* below this -> no battery   */
-#define BAT_LOW_PERCENT           15
-#define BATTERY_REFRESH_MS        10000
+#define LONG_ACTION_ABOUT         1              /* long press Play/Pause     */
 
 /* --------------------------------- timing --------------------------------- */
 
@@ -91,9 +75,4 @@ static const uint8_t RECEIVER_ADDRESS[5] = { 0x52, 0x58, 0x31, 0x52, 0x44 }; /* 
 #define SEARCH_RETRY_MS           500            /* connect request while down */
 #define CONNECTED_SCREEN_MS       2000           /* "Receiver Connected" splash*/
 #define BUTTON_SCREEN_MS          1000           /* button icon animation      */
-#define STATUS_SCREEN_MS          4000           /* battery / about overlay    */
-
-/* --------------------------------- sleep ---------------------------------- */
-
-#define ENABLE_SLEEP               1
-#define SLEEP_AFTER_MS             60000          /* idle before deep sleep    */
+#define STATUS_SCREEN_MS          4000           /* about overlay              */

@@ -6,7 +6,7 @@
  *
  * Behaviour per button (see BUTTONS table):
  *  - short press            -> sends the media command immediately
- *  - long press (>1 s)      -> optional long action (battery / about screen)
+ *  - long press (>1 s)      -> optional About screen
  *  - hold repeat            -> volume buttons repeat while held
  *
  * The scanner never blocks: it is polled from loop() and uses millis().
@@ -16,7 +16,6 @@
  */
 
 #include "buttons.h"
-#include "battery.h"   /* readBattery() for the battery overlay */
 
 /* ----------------------------- button table ------------------------------- */
 
@@ -26,7 +25,7 @@ static const ButtonDef BUTTONS[] = {
   { BTN_PLAY,     CMD_PLAY,     false, LONG_ACTION_ABOUT   },
   { BTN_VOL_UP,   CMD_VOL_UP,   true,  LONG_ACTION_NONE    },
   { BTN_VOL_DOWN, CMD_VOL_DOWN, true,  LONG_ACTION_NONE    },
-  { BTN_MUTE,     CMD_MUTE,     false, LONG_ACTION_BATTERY },
+  { BTN_MUTE,     CMD_MUTE,     false, LONG_ACTION_NONE    },
 };
 
 #define NUM_BUTTONS (sizeof(BUTTONS) / sizeof(BUTTONS[0]))
@@ -48,7 +47,6 @@ void initButtons(void) {
 void fireCommand(uint8_t cmd) {
   txPending = true;
   pendingCommand = cmd;
-  lastActivityMs = millis();
 }
 
 /* -------------------------------- scanner --------------------------------- */
@@ -87,14 +85,10 @@ void scanButtons(void) {
     if (!st.pressed) continue;
 
     /* Held: long-press action. */
-    if (!st.longFired && now - st.downSince >= LONG_PRESS_MS) {
+    if (!st.longFired && BUTTONS[i].longAction != LONG_ACTION_NONE &&
+        now - st.downSince >= LONG_PRESS_MS) {
       st.longFired = true;
-      lastActivityMs = now;
-      if (BUTTONS[i].longAction == LONG_ACTION_BATTERY) {
-        readBattery();   /* fresh reading for the battery screen */
-        screen = SCREEN_BATTERY;
-        screenUntilMs = now + STATUS_SCREEN_MS;
-      } else if (BUTTONS[i].longAction == LONG_ACTION_ABOUT) {
+      if (BUTTONS[i].longAction == LONG_ACTION_ABOUT) {
         screen = SCREEN_ABOUT;
         screenUntilMs = now + STATUS_SCREEN_MS;
       }

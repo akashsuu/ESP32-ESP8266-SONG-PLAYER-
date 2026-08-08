@@ -98,16 +98,6 @@ bool sendPacket(uint8_t cmd) {
 #endif
   if (cmd == CMD_HEARTBEAT) pkt.flags |= FLAG_HEARTBEAT;
 
-  if (cmd == CMD_STATUS) {
-    /* Battery + link quality report (see protocol.h for the packing).
-     * The NRF24L01 provides no real RSSI, so we report the estimated
-     * link quality (0..100 %) in place of the old rssi byte. */
-    pkt.timestampMs = (uint32_t)(batteryVoltage * 1000.0f);
-    uint16_t info = (uint16_t)((uint8_t)(batteryPercent >= 0 ? batteryPercent : 255)) << 8;
-    info |= (uint8_t)(linkQuality & 0xFF);
-    pkt.fwVersion = info;
-  }
-
   pkt.crc16    = packetCrc(&pkt);   /* plaintext integrity                  */
   pkt.checksum = packetChecksum(&pkt);
 

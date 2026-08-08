@@ -25,7 +25,6 @@
 #include "globals.h"
 #include "nrf_comm.h"
 #include "buttons.h"
-#include "battery.h"
 #include "ui.h"
 
 /* ----------------------------- hardware objects --------------------------- */
@@ -48,13 +47,9 @@ bool        everConnected    = false;  /* true once a link has ever succeeded */
 uint32_t    lastAckMs        = 0;      /* last radio ACK received             */
 uint32_t    lastTxMs         = 0;      /* last packet sent                    */
 uint32_t    lastSearchMs     = 0;      /* last CMD_CONNECT attempt            */
-uint32_t    lastBatteryMs    = 0;      /* last battery refresh                */
-uint32_t    lastActivityMs   = 0;      /* last user interaction (sleep timer) */
 uint32_t    lastCommandMs    = 0;      /* uptime of the last executed command */
 uint8_t     lastCommand      = CMD_NEXT;
 uint8_t     linkQuality      = 0;      /* 0..100 %, TX/ACK success window     */
-int8_t      batteryPercent   = -1;     /* -1 = running on USB                 */
-float       batteryVoltage   = 0.0f;
 uint32_t    packetCounter    = 0;      /* global monotonic counter            */
 uint16_t    packetNumber     = 0;      /* rolling number for duplicate detect */
 
@@ -65,7 +60,6 @@ uint8_t     pendingCommand   = CMD_NEXT;
  * never depends on the Web Editor's auto-generated prototypes. */
 void updateLink(void);
 void updateScreen(void);
-void maybeSleep(void);
 
 /* ---------------------------------- setup --------------------------------- */
 
@@ -73,29 +67,18 @@ void setup(void) {
   delay(100); /* one-time boot settle, allowed only here */
 
   initButtons();
-  initBattery();
   initDisplay();
   initRadio();
-
-  lastActivityMs = millis();
-
-  if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_EXT1) {
-    /* Woken by a button press: skip the long boot splash. */
-    screen = SCREEN_SEARCH;
-  } else {
-    screen = SCREEN_BOOT;
-    screenUntilMs = millis() + 1600;
-  }
+  screen = SCREEN_BOOT;
+  screenUntilMs = millis() + 1600;
 }
 
 /* ----------------------------------- loop --------------------------------- */
 
 void loop(void) {
   scanButtons();
-  updateBattery();
   updateLink();
   updateScreen();
-  maybeSleep();
 }
 
 /* --------------------------- link state machine --------------------------- */
@@ -112,7 +95,6 @@ void updateLink(void) {
       txPending = false;
       lastCommand = pendingCommand;
       lastCommandMs = now;
-      lastActivityMs = now;
       screen = SCREEN_BTN_ANIM;
       screenUntilMs = now + BUTTON_SCREEN_MS;
     }
@@ -122,8 +104,7 @@ void updateLink(void) {
   if (linkUp) {
     if (now - lastAckMs >= HEARTBEAT_INTERVAL_MS) {
       lastTxMs = now;
-      /* Every 6th heartbeat carries the battery + link quality report. */
-      sendPacket((packetCounter % 6 == 0) ? CMD_STATUS : CMD_HEARTBEAT);
+      sendPacket(CMD_HEARTBEAT);
     }
     if (now - lastAckMs >= LINK_TIMEOUT_MS) {
       linkUp = false;   /* radio ACKs stopped -> receiver is gone */
@@ -148,21 +129,4 @@ void updateScreen(void) {
     screen = linkUp ? SCREEN_CONNECTED : (everConnected ? SCREEN_ERROR : SCREEN_SEARCH);
   }
   drawFrame();   /* defined in ui.cpp */
-}
-
-/* --------------------------------- sleep ---------------------------------- */
-
-void maybeSleep(void) {
-#if ENABLE_SLEEP
-  uint32_t now = millis();
-
-  if (screen == SCREEN_SLEEP) {
-    if (now >= screenUntilMs) goToSleep();   /* never returns */
-    return;
-  }
-  if (now - lastActivityMs >= SLEEP_AFTER_MS) {
-    screen = SCREEN_SLEEP;
-    screenUntilMs = now + 1000;              /* show "Sleeping..." briefly */
-  }
-#endif
 }

@@ -35,10 +35,7 @@
  *   WARN:...                  diagnostics (unknown device, unknown cmd)
  */
 
-#include <SPI.h>
-#include <RF24.h>
-#include "config.h"
-#include "protocol.h"
+#include "nrf_rx.h"
 
 RF24 radio(NRF_CE_PIN, NRF_CSN_PIN);
 

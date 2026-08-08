@@ -37,7 +37,7 @@ const char* commandName(uint8_t cmd) {
  * link state: connected -> home, lost after being up -> error, never up
  * -> searching. */
 bool isTransient(ScreenState s) {
-  return s == SCREEN_BOOT || s == SCREEN_BTN_ANIM || s == SCREEN_BATTERY || s == SCREEN_ABOUT;
+  return s == SCREEN_BOOT || s == SCREEN_BTN_ANIM || s == SCREEN_ABOUT;
 }
 
 /* ------------------------------- init ------------------------------------- */
@@ -55,13 +55,6 @@ void initDisplay(void) {
 }
 
 /* ------------------------------ draw helpers ------------------------------ */
-
-void drawBatteryIcon(int x, int y, int8_t percent) {
-  display.drawRect(x, y, 12, 6, SSD1306_WHITE);
-  display.fillRect(x + 12, y + 2, 2, 2, SSD1306_WHITE);
-  int fill = (percent * 10) / 100;
-  if (fill > 0) display.fillRect(x + 1, y + 1, fill, 4, SSD1306_WHITE);
-}
 
 /* Five signal bars driven by the estimated link quality (0..100 %). */
 void drawSignalBars(int x, int y, int8_t percent) {
@@ -149,7 +142,7 @@ void drawSearchScreen(uint32_t now) {
   for (uint8_t i = 0; i < 3; i++) display.print(i < dots ? '.' : ' ');
 }
 
-/* Home screen: link quality, battery, last command, idle time, FW. */
+/* Home screen: connection state, link quality, last command and firmware. */
 void drawHomeScreen(uint32_t now) {
   display.clearDisplay();
 
@@ -185,16 +178,9 @@ void drawHomeScreen(uint32_t now) {
   drawSignalBars(100, y, (int8_t)linkQuality);
   y += 10;
 
-  /* Row 2: battery percentage + icon. */
+  /* Row 2: USB-powered device state. */
   display.setCursor(2, y);
-  if (batteryPercent >= 0) {
-    display.print(F("Battery "));
-    display.print(batteryPercent);
-    display.print('%');
-    drawBatteryIcon(100, y, batteryPercent);
-  } else {
-    display.print(F("Power USB"));
-  }
+  display.print(F("USB Powered"));
   y += 10;
 
   /* Row 3: last button pressed. */
@@ -215,11 +201,6 @@ void drawHomeScreen(uint32_t now) {
   display.print(FW_VERSION_STRING);
   y += 10;
 
-  /* Row 5: low battery warning (blinking). */
-  if (batteryPercent >= 0 && batteryPercent <= BAT_LOW_PERCENT && (now / 500) % 2 == 0) {
-    display.setCursor(2, y);
-    display.print(F("LOW BATTERY"));
-  }
 }
 
 /* Button pressed: big icon + label for BUTTON_SCREEN_MS. */
@@ -248,39 +229,6 @@ void drawErrorScreen(uint32_t now) {
   }
 }
 
-/* Battery details screen. */
-void drawBatteryScreen(uint32_t now) {
-  display.clearDisplay();
-  display.setTextColor(SSD1306_WHITE);
-  display.setTextSize(1);
-  display.setTextWrap(false);
-  display.setCursor(8, 4); display.println(F("Battery"));
-
-  display.setTextSize(2);
-  display.setCursor(8, 18);
-  if (batteryPercent >= 0) {
-    display.print(batteryPercent);
-    display.print('%');
-  } else {
-    display.print(F("USB"));
-  }
-  display.setTextSize(1);
-
-  display.setCursor(8, 40);
-  if (batteryPercent >= 0) {
-    display.print(F("Voltage "));
-    display.print(batteryVoltage, 2);
-    display.print('V');
-  } else {
-    display.print(F("No battery"));
-  }
-
-  if (batteryPercent >= 0 && batteryPercent <= BAT_LOW_PERCENT && (now / 500) % 2 == 0) {
-    display.setCursor(8, 52);
-    display.print(F("LOW BATTERY"));
-  }
-}
-
 /* About screen. */
 void drawAboutScreen(uint32_t now) {
   (void)now;
@@ -293,17 +241,6 @@ void drawAboutScreen(uint32_t now) {
   display.setCursor(8, 28); display.println(F("NRF24L01 PA+LNA"));
   display.setCursor(8, 40); display.print(F("FW ")); display.println(FW_VERSION_STRING);
   display.setCursor(8, 52); display.println(F("Firmware by You"));
-}
-
-/* Sleep screen (drawn right before deep sleep). */
-void drawSleepScreen(uint32_t now) {
-  (void)now;
-  display.clearDisplay();
-  display.setTextColor(SSD1306_WHITE);
-  display.setTextSize(1);
-  display.setTextWrap(false);
-  display.setCursor(24, 20); display.println(F("Sleeping..."));
-  display.setCursor(16, 34); display.println(F("Press Any Button"));
 }
 
 /* ------------------------------ frame router ------------------------------ */
@@ -321,9 +258,7 @@ void drawFrame(void) {
     case SCREEN_CONNECTED: drawHomeScreen(now);    break;
     case SCREEN_ERROR:     drawErrorScreen(now);   break;
     case SCREEN_BTN_ANIM:  drawButtonScreen(now);  break;
-    case SCREEN_BATTERY:   drawBatteryScreen(now); break;
     case SCREEN_ABOUT:     drawAboutScreen(now);   break;
-    case SCREEN_SLEEP:     drawSleepScreen(now);   break;
   }
   display.display();
 }
