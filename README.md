@@ -59,8 +59,10 @@ current spikes, so use a stable 3.3 V source and short connections.
 4. Select the ESP32 Arduino core used by the Web Editor (the remote supports
    the project's 2.0.17 core) and upload.
 5. Upload `Receiver/receiver.ino` to a **NodeMCU 1.0 (ESP-12E Module)** with
-   `nrf_rx.cpp`, `nrf_rx.h`, `config.h`, and `protocol.h` in the same sketch,
-   and RF24 installed.
+   `nrf_rx.cpp`, `nrf_rx.h`, `config.h`, and `protocol.h` in the same sketch.
+   Import `Receiver/RF24-1.4.6-ESP8266-2.5.0.zip` through the Libraries panel
+   for ESP8266 core 2.5.0. It already includes the required ESP8266-only RF24
+   compatibility fix; see `Receiver/RF24_ESP8266_2_5_0.md`.
 6. Confirm `DEVICE_ID`, `ENCRYPTION_KEY`, RF channel, and receiver address
    match in `Remote/config.h` and `Receiver/config.h` before flashing.
 

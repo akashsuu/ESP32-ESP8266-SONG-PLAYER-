@@ -15,7 +15,8 @@
  *   Board:  "NodeMCU 1.0 (ESP-12E Module)" (esp8266 core 3.x, via
  *           http://arduino.esp8266.com/stable/package_esp8266com_index.json)
  *   Flash:  Flash Size 4M (1M SPIFFS), 80 MHz, 115200 upload
- *   Libraries: RF24 (TMRh20 >= 1.4); SPI is built in
+ *   Libraries: RF24 by TMRh20, version 1.4.6 exactly; SPI is built in.
+ *   RF24 1.4.6 includes the ESP8266 2.5.0 pgm_read_ptr() compatibility fix.
  *
  * Wiring (see config.h for the full NodeMCU pin map):
  *   NRF VCC -> 3.3V (+ 10-100 uF across VCC/GND)   NRF CE  -> D2 (GPIO4)
