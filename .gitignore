@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.pyc
+
+# Arduino build artifacts (local only)
+*.o
+*.elf
+*.bin
+
+# Local settings (contains device encryption key)
+config.json
+
