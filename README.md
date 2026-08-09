@@ -40,31 +40,31 @@ presses the matching Windows media key. No drivers, no pairing, no network.
 
 ---
 
-## ✨ Features
+## Features
 
 **Remote (ESP32-WROOM-DA)**
-- ✅ Six media keys — Next · Previous · Play/Pause · Vol ▲ · Vol ▼ · Mute
-- ✅ Non-blocking debounce, **long-press About screen**, **hold-to-repeat** volume
-- ✅ 128×64 SSD1306 OLED: boot splash → searching → home (link %, status, last
+- Six media keys — Next · Previous · Play/Pause · Vol ▲ · Vol ▼ · Mute
+- Non-blocking debounce, **long-press About screen**, **hold-to-repeat** volume
+- 128×64 SSD1306 OLED: boot splash → searching → home (link %, status, last
   command, idle timer, FW) → button icons → connection-lost → About
-- ✅ **Link quality from TX/ACK success** — no fake RSSI, honest numbers
-- ✅ Auto-reconnect (search every 500 ms) · heartbeat every 5 s · 15 s link timeout
+- **Link quality from TX/ACK success** — no fake RSSI, honest numbers
+- Auto-reconnect (search every 500 ms) · heartbeat every 5 s · 15 s link timeout
 
 **Link security & reliability**
-- 🔐 20-byte packets: magic → device ID → **XOR-stream encryption** (16-byte key) → CRC-16/XMODEM → XOR checksum → monotonic counter (replay protection)
-- 🛡️ Auto-ACK · CRC-16 · 15 transmit retries · duplicate rejection · unknown-device rejection
+- 20-byte packets: magic → device ID → **XOR-stream encryption** (16-byte key) → CRC-16/XMODEM → XOR checksum → monotonic counter (replay protection)
+- Auto-ACK · CRC-16 · 15 transmit retries · duplicate rejection · unknown-device rejection
 
 **Receiver (ESP8266 NodeMCU)**
-- 📟 NRF24 RX with ACK payloads, watchdog, and a clean serial protocol
-- 🔌 Plug-and-play with the Python app — no drivers needed
+- NRF24 RX with ACK payloads, watchdog, and a clean serial protocol
+- Plug-and-play with the Python app — no drivers needed
 
 **App (Windows, Python 3.9+)**
-- 🖥️ System-tray controller: live link state, battery-less status, reconnect, notifications
-- 🎯 Converts to real **media keys** — works with Spotify, VLC, YouTube Music, Edge, and more
+- System-tray controller: live link state, battery-less status, reconnect, notifications
+- Converts to real **media keys** — works with Spotify, VLC, YouTube Music, Edge, and more
 
 ---
 
-## 🖼️ Architecture
+## Architecture
 
 <p align="center">
   <img src="docs/Flowchart.png" alt="Remote state machine" width="640">
@@ -80,7 +80,7 @@ presses the matching Windows media key. No drivers, no pairing, no network.
 
 ---
 
-## 🔌 Wiring
+## Wiring
 
 <p align="center">
   <img src="docs/Circuit.png" alt="Circuit" width="640">
@@ -106,13 +106,13 @@ All grounds are common. Every button is active-low between its GPIO and GND
 | Volume Down | GPIO27 | button → GND · hold to **repeat** |
 | Mute | GPIO14 | button → GND |
 
-> ⚠️ **Power the NRF24L01 PA+LNA from 3.3 V ONLY — never 5 V.** Put a 10–100 µF
-> capacitor directly across its VCC/GND pins; PA+LNA modules draw sharp current
-> spikes, so keep leads short and the supply stable.
+> **Warning — power the NRF24L01 PA+LNA from 3.3 V ONLY, never 5 V.** Put a
+> 10–100 µF capacitor directly across its VCC/GND pins; PA+LNA modules draw
+> sharp current spikes, so keep leads short and the supply stable.
 
 ---
 
-## 🚀 Getting started
+## Getting started
 
 ### 1. Remote — Arduino Web Editor (ESP32)
 
@@ -135,7 +135,7 @@ Upload `Receiver/receiver.ino` to a **NodeMCU 1.0 (ESP-12E Module)** together wi
 nrf_rx.h  nrf_rx.cpp  config.h  protocol.h
 ```
 
-> 📦 ESP8266 core 2.5.0 needs the bundled library: import
+> ESP8266 core 2.5.0 needs the bundled library: import
 > **`Receiver/RF24-1.4.6-ESP8266-2.5.0.zip`** via *Libraries* → *Add .ZIP*.
 > It already contains the required ESP8266-only RF24 fix (see
 > `Receiver/RF24_ESP8266_2_5_0.md`).
@@ -155,7 +155,7 @@ The app auto-detects the receiver's serial port, reconnects, and sits in the
 system tray. **Before first run**: `encryption_key` in `config.json` must match
 the `ENCRYPTION_KEY` in both `config.h` files.
 
-### ⚙️ One-time pairing (do this once)
+### One-time pairing (do this once)
 
 `DEVICE_ID`, `ENCRYPTION_KEY`, `RF_CHANNEL` and `RECEIVER_ADDRESS` must match
 across `Remote/config.h`, `Receiver/config.h` and `Python/config.json`:
@@ -169,7 +169,7 @@ across `Remote/config.h`, `Receiver/config.h` and `Python/config.json`:
 
 ---
 
-## 📦 Packet format
+## Packet format
 
 | Bytes | Field | Purpose |
 |---|---|---|
@@ -188,7 +188,7 @@ Bytes **5–18 are XOR-obfuscated** with a keystream derived from `packetNumber`
 and the shared 16-byte key. The receiver validates in order: magic → device ID →
 decrypt → checksum → CRC → monotonicity → duplicates → dispatch.
 
-## 📟 Serial protocol (receiver → app)
+## Serial protocol (receiver → app)
 
 | Line | Meaning |
 |---|---|
@@ -201,7 +201,7 @@ decrypt → checksum → CRC → monotonicity → duplicates → dispatch.
 
 ---
 
-## 📁 Repository layout
+## Repository layout
 
 ```
 SpotifyRemote/
@@ -225,7 +225,7 @@ SpotifyRemote/
 
 ---
 
-## 🛠️ Built for the Web Editor
+## Built for the Web Editor
 
 The firmware was designed specifically for **Arduino Web Editor**, where `.ino`
 tab order and auto-generated prototypes are out of your control:
