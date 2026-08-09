@@ -1,141 +1,242 @@
-# USB-Powered Spotify Remote
+<p align="center">
+  <img src="docs/Architecture.png" alt="System architecture" width="820">
+</p>
 
-This project is a permanently USB-powered ESP32 remote for Windows media
-controls. It sends commands by NRF24L01 PA+LNA radio to an ESP8266 NodeMCU
-receiver, which writes them over USB serial to the included Python tray app.
-The app converts the commands to Windows media keys for Spotify, the Spotify
-web player, VLC, YouTube Music, and other media applications.
+<h1 align="center">🎛️ USB-Powered Spotify Remote</h1>
+
+<p align="center">
+  <b>Physical media controls for Windows</b> — an ESP32 remote that talks to your
+  PC over a 2.5&nbsp;GHz radio link and drives <i>Spotify, VLC, YouTube Music</i>
+  and any other media app, with zero drivers and a live link-status display.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/ESP32-WROOM--DA-0066CC?logo=espressif&logoColor=white" alt="ESP32">
+  <img src="https://img.shields.io/badge/radio-NRF24L01%20PA%2BLNA-orange" alt="NRF24L01">
+  <img src="https://img.shields.io/badge/display-SSD1306%20128%C3%9764-3DDC84" alt="SSD1306">
+  <img src="https://img.shields.io/badge/firmware-C%2B%2B11-blue" alt="C++">
+  <img src="https://img.shields.io/badge/app-Python%203.9%2B-3776AB?logo=python&logoColor=white" alt="Python">
+  <img src="https://img.shields.io/badge/IDE-Arduino%20Web%20Editor-00979D?logo=arduino&logoColor=white" alt="Arduino">
+</p>
+
+---
+
+## 📡 How it works
 
 ```
-ESP32 remote -> NRF24L01 PA+LNA -> NRF24L01 PA+LNA -> ESP8266 -> USB serial -> Python -> Windows media keys
+┌─────────────┐     2.508 GHz / 250 kbps     ┌─────────────┐     USB serial      ┌──────────────┐
+│  ESP32      │  ◄────────────────────────►  │  ESP8266    │  ────────────────►  │  Windows     │
+│  Remote     │   encrypted NRF24L01 PA+LNA  │  NodeMCU    │  `NEXT|PLAY|...`    │  Python app  │
+│  (OLED + 6  │  auto-ACK · CRC-16 · retries │  Receiver   │                     │  media keys  │
+│   buttons)  │                              │             │                     │              │
+└─────────────┘                              └─────────────┘                     └──────────────┘
 ```
 
-The remote has no battery circuitry and does not enter deep sleep. It remains
-powered by its USB cable while in use. (Battery/ADC features were removed by
-design; `CMD_STATUS` is kept in the protocol for legacy receivers/apps.)
+Every press of a button is packed into a **20-byte encrypted packet**, sent with
+radio-level auto-retry, acknowledged by the receiver — and the ACK itself
+becomes the remote's **live link-quality meter** (`Link: 96%` + 5 bars on the
+OLED). The receiver validates and forwards the command over USB; the tray app
+presses the matching Windows media key. No drivers, no pairing, no network.
 
-## Features
+---
 
-- ESP32-WROOM-DA remote with a 128x64 I2C SSD1306 OLED.
-- Six active-low buttons: Next, Previous, Play/Pause, Volume Up, Volume Down,
-  and Mute.
-- Non-blocking debounce, long-press About screen (Play/Pause), and volume
-  hold-repeat.
-- NRF24 auto-ACK, CRC-16, retries, packet counter, checksum, device ID,
-  heartbeat, reconnect, and estimated link quality from TX/ACK results.
-- No RSSI calls: the OLED's Link percentage is an ACK-success estimate.
-- ESP8266 receiver (restructured as an `.ino` + `nrf_rx` module) and Python
-  app are kept in sync with the Remote protocol.
+## ✨ Features
 
-## ESP32 Remote wiring
+**Remote (ESP32-WROOM-DA)**
+- ✅ Six media keys — Next · Previous · Play/Pause · Vol ▲ · Vol ▼ · Mute
+- ✅ Non-blocking debounce, **long-press About screen**, **hold-to-repeat** volume
+- ✅ 128×64 SSD1306 OLED: boot splash → searching → home (link %, status, last
+  command, idle timer, FW) → button icons → connection-lost → About
+- ✅ **Link quality from TX/ACK success** — no fake RSSI, honest numbers
+- ✅ Auto-reconnect (search every 500 ms) · heartbeat every 5 s · 15 s link timeout
 
-All grounds must be connected together. Wire each button between its GPIO and
-GND; the firmware uses `INPUT_PULLUP`.
+**Link security & reliability**
+- 🔐 20-byte packets: magic → device ID → **XOR-stream encryption** (16-byte key) → CRC-16/XMODEM → XOR checksum → monotonic counter (replay protection)
+- 🛡️ Auto-ACK · CRC-16 · 15 transmit retries · duplicate rejection · unknown-device rejection
+
+**Receiver (ESP8266 NodeMCU)**
+- 📟 NRF24 RX with ACK payloads, watchdog, and a clean serial protocol
+- 🔌 Plug-and-play with the Python app — no drivers needed
+
+**App (Windows, Python 3.9+)**
+- 🖥️ System-tray controller: live link state, battery-less status, reconnect, notifications
+- 🎯 Converts to real **media keys** — works with Spotify, VLC, YouTube Music, Edge, and more
+
+---
+
+## 🖼️ Architecture
+
+<p align="center">
+  <img src="docs/Flowchart.png" alt="Remote state machine" width="640">
+  <br><sub>The remote's non-blocking state machine — everything runs on <code>millis()</code>, no <code>delay()</code> in the loop.</sub>
+</p>
+
+| Layer | Component | Role |
+|---|---|---|
+| **Remote** | `ESP32-WROOM-DA` | scans buttons, builds/encrypts packets, drives OLED |
+| **Link** | `NRF24L01 PA+LNA` ×2 | 2.508 GHz, 250 kbps, auto-ACK, dynamic payloads |
+| **Receiver** | `ESP8266 NodeMCU` | validates packets, ACK payloads, USB serial bridge |
+| **Host** | `Python tray app` | serial → Windows media keys |
+
+---
+
+## 🔌 Wiring
+
+<p align="center">
+  <img src="docs/Circuit.png" alt="Circuit" width="640">
+</p>
+
+All grounds are common. Every button is active-low between its GPIO and GND
+(firmware uses `INPUT_PULLUP`).
 
 | Device | ESP32 pin | Notes |
 |---|---:|---|
 | OLED SDA | GPIO21 | I2C data |
 | OLED SCL | GPIO22 | I2C clock |
-| OLED VCC | GPIO2 or 3.3 V | GPIO2 is the configured display-power pin |
+| OLED VCC | GPIO2 | display-power pin (firmware-controlled) |
 | NRF24 CE | GPIO4 | |
 | NRF24 CSN | GPIO5 | |
 | NRF24 SCK | GPIO18 | VSPI clock |
 | NRF24 MOSI | GPIO23 | VSPI MOSI |
 | NRF24 MISO | GPIO19 | VSPI MISO |
-| Next | GPIO32 | button to GND |
-| Previous | GPIO33 | button to GND |
-| Play/Pause | GPIO25 | button to GND; hold for About |
-| Volume Up | GPIO26 | button to GND; hold to repeat |
-| Volume Down | GPIO27 | button to GND; hold to repeat |
-| Mute | GPIO14 | button to GND |
+| Next | GPIO32 | button → GND |
+| Previous | GPIO33 | button → GND |
+| Play/Pause | GPIO25 | button → GND · hold for **About** |
+| Volume Up | GPIO26 | button → GND · hold to **repeat** |
+| Volume Down | GPIO27 | button → GND · hold to **repeat** |
+| Mute | GPIO14 | button → GND |
 
-Power the NRF24L01 PA+LNA from **3.3 V only**, never 5 V. Put a 10-100 uF
-capacitor directly across its VCC and GND pins. The PA+LNA module can have high
-current spikes, so use a stable 3.3 V source and short connections.
+> ⚠️ **Power the NRF24L01 PA+LNA from 3.3 V ONLY — never 5 V.** Put a 10–100 µF
+> capacitor directly across its VCC/GND pins; PA+LNA modules draw sharp current
+> spikes, so keep leads short and the supply stable.
 
-## Arduino Web Editor upload
+---
 
-### Remote (ESP32)
+## 🚀 Getting started
 
-1. Create/open a sketch named `remote` and upload every file from `Remote/` as
-   a matching sketch tab:
-   `remote.ino`, `globals.h`, `config.h`, `protocol.h`,
-   `nrf_comm.h`/`nrf_comm.cpp`, `buttons.h`/`buttons.cpp`,
-   `ui.h`/`ui.cpp`.
-2. Select **ESP32 Dev Module** for the ESP32-WROOM-DA remote.
-3. Install RF24 (TMRh20), Adafruit SSD1306, Adafruit GFX, and Adafruit BusIO
-   via the Libraries panel.
-4. The firmware targets ESP32 Arduino core 2.0.17 (also builds on 3.x); keep
-   the core version selected by the Web Editor.
-5. Upload. The OLED shows boot progress, receiver search/connection state,
-   estimated link quality, USB-powered status, the last command, button
-   feedback, and the About screen.
+### 1. Remote — Arduino Web Editor (ESP32)
 
-### Receiver (ESP8266)
+Create a sketch named `remote` and upload **every file from `Remote/`** as tabs:
 
-1. Upload `Receiver/receiver.ino` to a **NodeMCU 1.0 (ESP-12E Module)** with
-   `nrf_rx.cpp`, `nrf_rx.h`, `config.h`, and `protocol.h` in the same sketch.
-2. Import `Receiver/RF24-1.4.6-ESP8266-2.5.0.zip` through the Libraries panel
-   for ESP8266 core 2.5.0. It already includes the required ESP8266-only RF24
-   compatibility fix; see `Receiver/RF24_ESP8266_2_5_0.md`.
+```
+remote.ino  globals.h  config.h  protocol.h
+nrf_comm.h  nrf_comm.cpp  buttons.h  buttons.cpp  ui.h  ui.cpp
+```
 
-### Before flashing
+1. Board: **ESP32 Dev Module** (core 2.0.17 — also builds on 3.x)
+2. Libraries: **RF24 (TMRh20)**, **Adafruit SSD1306**, **Adafruit GFX**, **Adafruit BusIO**
+3. Upload — the OLED walks you through boot → search → connect
 
-Confirm `DEVICE_ID`, `ENCRYPTION_KEY`, RF channel, and receiver address match
-in `Remote/config.h`, `Receiver/config.h`, and `Python/config.json`
-(`encryption_key`).
+### 2. Receiver — Arduino Web Editor (ESP8266)
 
-## Serial protocol (receiver -> Python)
+Upload `Receiver/receiver.ino` to a **NodeMCU 1.0 (ESP-12E Module)** together with:
 
-| Line | Meaning |
-|---|---|
-| `READY` | boot acknowledgement |
-| `INFO:fw=1.0.0,dev=A1B2` | identity |
-| `LINK:UP` / `LINK:DOWN` | radio link state change |
-| `NEXT/PREVIOUS/PLAY/VOLUP/VOLDOWN/MUTE` | media command (bare line) |
-| `STATUS:legacy` | remote sent `CMD_STATUS` (battery/quality legacy) |
-| `HEARTBEAT` | link alive (every 5 s) |
-| `PONG` | reply to `PING` |
-| `WARN:...` | diagnostics (unknown device, unknown command) |
+```
+nrf_rx.h  nrf_rx.cpp  config.h  protocol.h
+```
 
-## Python application
+> 📦 ESP8266 core 2.5.0 needs the bundled library: import
+> **`Receiver/RF24-1.4.6-ESP8266-2.5.0.zip`** via *Libraries* → *Add .ZIP*.
+> It already contains the required ESP8266-only RF24 fix (see
+> `Receiver/RF24_ESP8266_2_5_0.md`).
 
-On Windows, install Python 3.9+ and run:
+### 3. Windows app
 
 ```bat
 cd Python
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
+copy config.example.json config.json   :: then set encryption_key!
 python main.py
 ```
 
-The application retains serial auto-detection, reconnect, system tray,
-logging, and media-key control. The receiver commands are `NEXT`, `PREVIOUS`,
-`PLAY`, `VOLUP`, `VOLDOWN`, and `MUTE`.
+The app auto-detects the receiver's serial port, reconnects, and sits in the
+system tray. **Before first run**: `encryption_key` in `config.json` must match
+the `ENCRYPTION_KEY` in both `config.h` files.
 
-`Python/config.json` holds local settings including the device pairing key and
-is **excluded from git**; copy `config.example.json` to `config.json` and set
-`encryption_key` to match the firmware before first run.
+### ⚙️ One-time pairing (do this once)
 
-## Folder structure
+`DEVICE_ID`, `ENCRYPTION_KEY`, `RF_CHANNEL` and `RECEIVER_ADDRESS` must match
+across `Remote/config.h`, `Receiver/config.h` and `Python/config.json`:
+
+| Parameter | Remote | Receiver |
+|---|---|---|
+| Channel | `RF_CHANNEL = 108` | same |
+| Address | `RECEIVER_ADDRESS = "RX1RD"` | same |
+| Device ID | `DEVICE_ID = 0xA1B2` | same |
+| Key | `ENCRYPTION_KEY` (16 B) | same |
+
+---
+
+## 📦 Packet format
+
+| Bytes | Field | Purpose |
+|---|---|---|
+| 0 | magic `0x5A` | cheap garbage rejection |
+| 1–2 | `deviceId` `0xA1B2` | device pairing |
+| 3–4 | `packetNumber` | duplicate detection |
+| 5–8 | `timestampMs` | reboot detection |
+| 9 | `command` | NEXT…MUTE / HEARTBEAT / CONNECT / ACK / STATUS |
+| 10 | `flags` | encrypted · heartbeat |
+| 11–12 | `crc16` | CRC-16/XMODEM (bytes 0–10 + 13–18) |
+| 13–14 | `fwVersion` | firmware version |
+| 15–18 | `counter` | monotonic counter (replay protection) |
+| 19 | `checksum` | XOR of bytes 0–18 |
+
+Bytes **5–18 are XOR-obfuscated** with a keystream derived from `packetNumber`
+and the shared 16-byte key. The receiver validates in order: magic → device ID →
+decrypt → checksum → CRC → monotonicity → duplicates → dispatch.
+
+## 📟 Serial protocol (receiver → app)
+
+| Line | Meaning |
+|---|---|
+| `READY` | boot acknowledgement |
+| `INFO:fw=1.0.0,dev=A1B2` | identity |
+| `LINK:UP` / `LINK:DOWN` | radio link state |
+| `NEXT` · `PREVIOUS` · `PLAY` · `VOLUP` · `VOLDOWN` · `MUTE` | media command |
+| `STATUS:legacy` | legacy `CMD_STATUS` from older remotes |
+| `HEARTBEAT` · `PONG` · `WARN:...` | keep-alive, ping reply, diagnostics |
+
+---
+
+## 📁 Repository layout
 
 ```
 SpotifyRemote/
-├── Remote/       ESP32 USB-powered remote firmware
-│   ├── remote.ino          main loop, link state machine
-│   ├── globals.h           shared types + externs (no prototypes)
-│   ├── nrf_comm.h/.cpp     NRF24 TX, packet build, encryption, link quality
-│   ├── buttons.h/.cpp      debounce, long press, hold repeat
-│   ├── ui.h/.cpp           OLED screens, icons, animations
-│   └── config.h, protocol.h
-├── Receiver/     ESP8266 NRF24-to-serial receiver firmware
-│   ├── receiver.ino        main sketch
-│   ├── nrf_rx.h/.cpp       radio RX, validation, ACK payloads
-│   ├── config.h, protocol.h
-│   └── RF24-1.4.6-ESP8266-2.5.0.zip  (bundled library, see .md)
-├── Python/       Windows tray media-key controller
-│   ├── main.py, tray.py, serial_manager.py, media_controller.py, ...
-│   └── config.example.json (template; real config.json is gitignored)
-└── docs/         diagrams and diagram generator
+├── Remote/                     ESP32 remote firmware (Web Editor ready)
+│   ├── remote.ino              main loop · link state machine
+│   ├── globals.h               shared types + externs (build-order safe)
+│   ├── nrf_comm.h/.cpp         NRF24 TX · packet build · encryption · link quality
+│   ├── buttons.h/.cpp          debounce · long press · hold repeat
+│   ├── ui.h/.cpp               OLED screens · icons · animations
+│   └── config.h · protocol.h   pins/timing/identity · wire format
+├── Receiver/                   ESP8266 receiver firmware
+│   ├── receiver.ino            main sketch
+│   ├── nrf_rx.h/.cpp           radio RX · validation · ACK payloads
+│   ├── config.h · protocol.h
+│   └── RF24-1.4.6-ESP8266-2.5.0.zip   bundled ESP8266-compatible RF24
+├── Python/                     Windows tray media-key controller
+│   ├── main.py · tray.py · serial_manager.py · media_controller.py …
+│   └── config.example.json     template (real config.json is gitignored)
+└── docs/                       diagrams + generator (generate_diagrams.py)
 ```
+
+---
+
+## 🛠️ Built for the Web Editor
+
+The firmware was designed specifically for **Arduino Web Editor**, where `.ino`
+tab order and auto-generated prototypes are out of your control:
+
+- `remote.ino` is the **only** `.ino`; every other module is a `.cpp` + `.h` pair
+- All shared globals are `extern` in `globals.h`, **defined exactly once**
+- Function prototypes live in each module's own header — the build can never
+  break from tab order, and compiles cleanly on ESP32 cores 2.0.17 **and** 3.x
+
+---
+
+<p align="center">
+  <sub>Made with an ESP32, an NRF24L01, and an unreasonable love for physical buttons.</sub>
+</p>
