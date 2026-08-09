@@ -2,7 +2,7 @@
   <img src="docs/Architecture.png" alt="System architecture" width="820">
 </p>
 
-<h1 align="center">🎛️ USB-Powered Spotify Remote</h1>
+<h1 align="center">USB-Powered Spotify Remote</h1>
 
 <p align="center">
   <b>Physical media controls for Windows</b> — an ESP32 remote that talks to your
@@ -21,7 +21,7 @@
 
 ---
 
-## 📡 How it works
+## How it works
 
 ```
 ┌─────────────┐     2.508 GHz / 250 kbps     ┌─────────────┐     USB serial      ┌──────────────┐
