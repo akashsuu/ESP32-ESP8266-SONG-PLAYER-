@@ -27,6 +27,10 @@
 #include "buttons.h"
 #include "ui.h"
 
+/* Set to 1 to get boot/TX markers on the USB serial port (115200 baud).
+ * If the ESP32 crashes, the core prints a panic reason there too. */
+#define SERIAL_DEBUG 1
+
 /* ----------------------------- hardware objects --------------------------- */
 /* The only definitions of the hardware objects; globals.h declares them
  * extern so every .cpp module can use them. */
@@ -66,11 +70,28 @@ void updateScreen(void);
 void setup(void) {
   delay(100); /* one-time boot settle, allowed only here */
 
+#if SERIAL_DEBUG
+  Serial.begin(115200);
+  Serial.println(F("[BOOT] start"));
+#endif
+
   initButtons();
+#if SERIAL_DEBUG
+  Serial.println(F("[BOOT] buttons ok"));
+#endif
   initDisplay();
+#if SERIAL_DEBUG
+  Serial.println(F("[BOOT] display ok"));
+#endif
   initRadio();
+#if SERIAL_DEBUG
+  Serial.println(F("[BOOT] radio ok"));
+#endif
   screen = SCREEN_BOOT;
   screenUntilMs = millis() + 1600;
+#if SERIAL_DEBUG
+  Serial.println(F("[BOOT] done - loop starting"));
+#endif
 }
 
 /* ----------------------------------- loop --------------------------------- */
@@ -97,6 +118,17 @@ void updateLink(void) {
       lastCommandMs = now;
       screen = SCREEN_BTN_ANIM;
       screenUntilMs = now + BUTTON_SCREEN_MS;
+#if SERIAL_DEBUG
+      Serial.print(F("[TX] cmd "));
+      Serial.print(pendingCommand);
+      Serial.println(F(" acked"));
+#endif
+    } else {
+#if SERIAL_DEBUG
+      Serial.print(F("[TX] cmd "));
+      Serial.print(pendingCommand);
+      Serial.println(F(" failed"));
+#endif
     }
     return;
   }
@@ -116,6 +148,10 @@ void updateLink(void) {
       lastSearchMs = now;
       lastTxMs = now;
       sendPacket(CMD_CONNECT);
+#if SERIAL_DEBUG
+      Serial.print(F("[TX] connect attempt, link="));
+      Serial.println(linkUp ? F("up") : F("down"));
+#endif
     }
   }
 }
