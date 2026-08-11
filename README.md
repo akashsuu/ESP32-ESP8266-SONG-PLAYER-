@@ -126,19 +126,29 @@ nrf_comm.h  nrf_comm.cpp  buttons.h  buttons.cpp  ui.h  ui.cpp
 1. Board: **ESP32 Dev Module** (core 2.0.17 — also builds on 3.x)
 2. Libraries: **RF24 (TMRh20)**, **Adafruit SSD1306**, **Adafruit GFX**, **Adafruit BusIO**
 3. Upload — the OLED walks you through boot → search → connect
+4. Debugging: set `SERIAL_DEBUG` to `1` in `remote.ino` and watch 115200 baud
+   for `[BOOT]`/`[TX]` markers plus any ESP32 panic reason
 
 ### 2. Receiver — Arduino Web Editor (ESP8266)
 
-Upload `Receiver/receiver.ino` to a **NodeMCU 1.0 (ESP-12E Module)** together with:
+The whole receiver — sketch, modules **and** a patched RF24 — lives in
+`Receiver/NodeMCU_sketch/`. Create a sketch named `nodeMCU` and upload **every
+file from that folder** as tabs (no library import needed):
 
 ```
-nrf_rx.h  nrf_rx.cpp  config.h  protocol.h
+receiver.ino  nrf_rx.h  nrf_rx.cpp  config.h  protocol.h
+RF24.h  RF24.cpp  RF24_config.h  nRF24L01.h  printf.h
 ```
 
-> ESP8266 core 2.5.0 needs the bundled library: import
-> **`Receiver/RF24-1.4.6-ESP8266-2.5.0.zip`** via *Libraries* → *Add .ZIP*.
-> It already contains the required ESP8266-only RF24 fix (see
-> `Receiver/RF24_ESP8266_2_5_0.md`).
+1. Board: **NodeMCU 1.0 (ESP-12E Module)**, **ESP8266 core 2.5.0**
+2. Upload — expect `READY` + `INFO:fw=...` on its serial port
+
+> **Why vendored RF24?** ESP8266 core 2.5.0 ships a broken `pgm_read_ptr()`
+> macro, so unpatched RF24 fails to compile. Importing the patched ZIP
+> (`Receiver/RF24-1.4.6-ESP8266-2.5.0.zip`) works in principle, but the Web
+> Editor can silently keep using a stale, unpatched RF24 copy. Vendoring the
+> patched files inside the sketch makes the build deterministic. See
+> `Receiver/RF24_ESP8266_2_5_0.md`.
 
 ### 3. Windows app
 
@@ -206,17 +216,20 @@ decrypt → checksum → CRC → monotonicity → duplicates → dispatch.
 ```
 SpotifyRemote/
 ├── Remote/                     ESP32 remote firmware (Web Editor ready)
-│   ├── remote.ino              main loop · link state machine
+│   ├── remote.ino              main loop · link state machine · serial debug
 │   ├── globals.h               shared types + externs (build-order safe)
 │   ├── nrf_comm.h/.cpp         NRF24 TX · packet build · encryption · link quality
 │   ├── buttons.h/.cpp          debounce · long press · hold repeat
 │   ├── ui.h/.cpp               OLED screens · icons · animations
 │   └── config.h · protocol.h   pins/timing/identity · wire format
 ├── Receiver/                   ESP8266 receiver firmware
-│   ├── receiver.ino            main sketch
-│   ├── nrf_rx.h/.cpp           radio RX · validation · ACK payloads
-│   ├── config.h · protocol.h
-│   └── RF24-1.4.6-ESP8266-2.5.0.zip   bundled ESP8266-compatible RF24
+│   ├── NodeMCU_sketch/         ready-to-upload sketch + vendored patched RF24
+│   │   ├── receiver.ino        main sketch
+│   │   ├── nrf_rx.h/.cpp       radio RX · validation · ACK payloads
+│   │   ├── config.h · protocol.h
+│   │   └── RF24.h/.cpp/…       patched RF24 (core 2.5.0 compatible, vendored)
+│   ├── RF24-1.4.6-ESP8266-2.5.0.zip   alternative: importable patched RF24
+│   └── RF24_ESP8266_2_5_0.md   why the patch exists
 ├── Python/                     Windows tray media-key controller
 │   ├── main.py · tray.py · serial_manager.py · media_controller.py …
 │   └── config.example.json     template (real config.json is gitignored)
