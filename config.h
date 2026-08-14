@@ -16,13 +16,16 @@
 #define DEBOUNCE_DELAY_MS   50
 
 // ============================================================================
-// 3. 1.8" SPI TFT 128x160 (ST7735 V1.1) PIN MAP
+// 3. 1.8" SPI TFT 128x160 (ST7735 V1.1) PIN MAP & TAB SELECTION
 // ============================================================================
 #define TFT_CS              16
 #define TFT_RST             2
 #define TFT_DC              4
 #define TFT_MOSI            17
 #define TFT_SCLK            5
+
+// Tab Type Options: INITR_BLACKTAB, INITR_REDTAB, INITR_GREENTAB, INITR_144GREENTAB
+#define ST7735_TAB_TYPE     INITR_BLACKTAB
 
 // TFT Display Physical Dimensions
 #define TFT_WIDTH           128

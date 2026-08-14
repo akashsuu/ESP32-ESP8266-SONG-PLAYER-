@@ -1,13 +1,41 @@
 #include "display_driver.h"
+#include <SPI.h>
 
-// Instantiate Adafruit ST7735 TFT driver using hardware SPI
-static Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
+// Use ESP32 Hardware SPI bus
+static SPIClass tftSPI(HSPI);
+static Adafruit_ST7735 tft = Adafruit_ST7735(&tftSPI, TFT_CS, TFT_DC, TFT_RST);
 
 void initDisplay() {
-    // Initialize 1.8" TFT with ST7735R red tab / black tab layout
-    tft.initR(INITR_BLACKTAB);
-    // Set landscape rotation (160 wide x 128 high)
+    // 1. Configure Pin Modes for DC, CS, RST
+    pinMode(TFT_CS, OUTPUT);
+    pinMode(TFT_DC, OUTPUT);
+    pinMode(TFT_RST, OUTPUT);
+
+    // 2. Perform Hardware Reset Pulse to wake up ST7735 controller
+    digitalWrite(TFT_RST, HIGH);
+    delay(10);
+    digitalWrite(TFT_RST, LOW);
+    delay(50);
+    digitalWrite(TFT_RST, HIGH);
+    delay(100);
+
+    // 3. Initialize Hardware SPI bus (SCK=5, MOSI=17) at 27 MHz
+    tftSPI.begin(TFT_SCLK, -1, TFT_MOSI, TFT_CS);
+    tftSPI.setFrequency(27000000);
+
+    // 4. Initialize ST7735 Display Driver
+    tft.initR(ST7735_TAB_TYPE);
+
+    // 5. Set Landscape Rotation (160 wide x 128 high)
     tft.setRotation(1);
+
+    // 6. Diagnostic Startup Splash Test (RED -> GREEN -> BLUE -> BLACK)
+    tft.fillScreen(ST77XX_RED);
+    delay(150);
+    tft.fillScreen(ST77XX_GREEN);
+    delay(150);
+    tft.fillScreen(ST77XX_BLUE);
+    delay(150);
     tft.fillScreen(ST77XX_BLACK);
 }
 
