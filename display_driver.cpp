@@ -1,8 +1,7 @@
 #include "display_driver.h"
-#include <SPI.h>
 
-// Adafruit ST7735 using ESP32 VSPI Hardware SPI (CS=5, DC=4, RST=17)
-static Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
+// 5-Pin Software SPI constructor (CS, DC, MOSI, SCLK, RST) - 100% immune to bus conflicts
+static Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
 
 void initDisplay() {
     // 1. Configure Pin Modes
@@ -10,23 +9,23 @@ void initDisplay() {
     pinMode(TFT_DC, OUTPUT);
     pinMode(TFT_RST, OUTPUT);
 
-    // 2. Clean Hardware Reset Pulse
-    digitalWrite(TFT_RST, HIGH);
-    delay(10);
-    digitalWrite(TFT_RST, LOW);
-    delay(20);
+    // 2. Hardware Reset Sequence
     digitalWrite(TFT_RST, HIGH);
     delay(50);
+    digitalWrite(TFT_RST, LOW);
+    delay(100);
+    digitalWrite(TFT_RST, HIGH);
+    delay(150);
 
-    // 3. Initialize VSPI bus at 10 MHz (Prevents breadboard signal noise/flicker)
-    SPI.begin(TFT_SCLK, -1, TFT_MOSI, TFT_CS);
-    SPI.setFrequency(10000000);
-
-    // 4. Initialize ST7735 Display Driver
+    // 3. Initialize ST7735 Display Driver
     tft.initR(ST7735_TAB_TYPE);
 
-    // 5. Set Landscape Rotation (160 wide x 128 high)
+    // 4. Set Landscape Rotation (160 wide x 128 high)
     tft.setRotation(1);
+
+    // 5. Initial Blue Test Flash
+    tft.fillScreen(ST77XX_BLUE);
+    delay(300);
     tft.fillScreen(ST77XX_BLACK);
 }
 

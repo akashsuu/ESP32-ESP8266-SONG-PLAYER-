@@ -1,4 +1,6 @@
 #include <Arduino.h>
+#include "soc/soc.h"
+#include "soc/rtc_cntl_reg.h"
 #include "config.h"
 #include "camera_driver.h"
 #include "display_driver.h"
@@ -19,32 +21,41 @@ static int lastButtonState = HIGH;
 static unsigned long lastDebounceTime = 0;
 
 void setup() {
-    Serial.begin(115200);
-    Serial.println("\n--- ESP32 Standalone Camera Initializing ---");
+    // 1. Disable ESP32 Brownout Detector (Prevents power-dip reboot loops)
+    WRITE_PERI_REG(RTC_CNTL_BROWNOUT_REG, 0);
 
-    // 1. Setup Shutter Button
+    Serial.begin(115200);
+    delay(300);
+    Serial.println("\n==========================================");
+    Serial.println("   ESP32 Standalone Camera Initializing   ");
+    Serial.println("==========================================");
+
+    // 2. Setup Shutter Button
     pinMode(BUTTON_PIN, INPUT_PULLUP);
 
-    // 2. Initialize ST7735 TFT Display
+    // 3. Initialize ST7735 TFT Display
+    Serial.println("[1/3] Initializing ST7735 TFT Display...");
     initDisplay();
     showWaitingScreen();
+    Serial.println("      -> TFT Display Ready!");
 
-    // 3. Power stabilization delay before turning on Bluetooth radio
-    delay(100);
+    // 4. Power Stabilization Delay
+    delay(200);
 
-    // 4. Initialize Bluetooth SPP Advertising
+    // 5. Initialize Bluetooth SPP Advertising
+    Serial.println("[2/3] Initializing Bluetooth SPP...");
     if (!initBluetooth()) {
-        Serial.println("CRITICAL ERROR: Bluetooth initialization failed!");
+        Serial.println("      -> ERROR: Bluetooth init failed!");
     } else {
-        Serial.println("Bluetooth Advertising as: ESP32-CAMERA");
+        Serial.println("      -> SUCCESS: Advertising as 'ESP32-CAMERA'");
     }
 
-    // 5. Initialize OV7670 Camera (Non-blocking if camera is not attached yet)
-    Serial.println("Attempting camera initialization...");
+    // 6. Initialize OV7670 Camera Hardware
+    Serial.println("[3/3] Attempting OV7670 Camera Init...");
     if (!initCamera()) {
-        Serial.println("WARNING: OV7670 Camera not detected or not connected yet.");
+        Serial.println("      -> NOTICE: OV7670 Camera not detected (Screen active for standalone testing)");
     } else {
-        Serial.println("OV7670 Camera Initialized Successfully.");
+        Serial.println("      -> SUCCESS: OV7670 Camera Initialized");
     }
 }
 
