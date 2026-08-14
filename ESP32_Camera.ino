@@ -22,10 +22,10 @@ static unsigned long lastDebounceTime = 0;
 
 void setup() {
     // 1. Disable ESP32 Brownout Detector (Prevents power-dip reboot loops)
-    WRITE_PERI_REG(RTC_CNTL_BROWNOUT_REG, 0);
+    WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
 
     Serial.begin(115200);
-    delay(300);
+    delay(200);
     Serial.println("\n==========================================");
     Serial.println("   ESP32 Standalone Camera Initializing   ");
     Serial.println("==========================================");
@@ -36,13 +36,15 @@ void setup() {
     // 3. Initialize ST7735 TFT Display
     Serial.println("[1/3] Initializing ST7735 TFT Display...");
     initDisplay();
+    
+    // 4. Immediately render BLUETOOTH WAITING screen
     showWaitingScreen();
-    Serial.println("      -> TFT Display Ready!");
+    Serial.println("      -> BLUETOOTH WAITING UI Rendered!");
 
-    // 4. Power Stabilization Delay
+    // 5. Power Stabilization Delay
     delay(200);
 
-    // 5. Initialize Bluetooth SPP Advertising
+    // 6. Initialize Bluetooth SPP Advertising
     Serial.println("[2/3] Initializing Bluetooth SPP...");
     if (!initBluetooth()) {
         Serial.println("      -> ERROR: Bluetooth init failed!");
@@ -50,10 +52,10 @@ void setup() {
         Serial.println("      -> SUCCESS: Advertising as 'ESP32-CAMERA'");
     }
 
-    // 6. Initialize OV7670 Camera Hardware
+    // 7. Initialize OV7670 Camera Hardware
     Serial.println("[3/3] Attempting OV7670 Camera Init...");
     if (!initCamera()) {
-        Serial.println("      -> NOTICE: OV7670 Camera not detected (Screen active for standalone testing)");
+        Serial.println("      -> NOTICE: OV7670 Camera not detected (Screen active for testing)");
     } else {
         Serial.println("      -> SUCCESS: OV7670 Camera Initialized");
     }
