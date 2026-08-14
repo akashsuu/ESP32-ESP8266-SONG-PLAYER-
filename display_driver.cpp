@@ -1,27 +1,26 @@
 #include "display_driver.h"
 #include <SPI.h>
 
-// Use ESP32 Hardware SPI bus
-static SPIClass tftSPI(HSPI);
-static Adafruit_ST7735 tft = Adafruit_ST7735(&tftSPI, TFT_CS, TFT_DC, TFT_RST);
+// Adafruit ST7735 using ESP32 VSPI Hardware SPI (CS=5, DC=4, RST=17)
+static Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 
 void initDisplay() {
-    // 1. Configure Pin Modes for DC, CS, RST
+    // 1. Configure Pin Modes
     pinMode(TFT_CS, OUTPUT);
     pinMode(TFT_DC, OUTPUT);
     pinMode(TFT_RST, OUTPUT);
 
-    // 2. Perform Hardware Reset Pulse to wake up ST7735 controller
+    // 2. Hardware Reset Pulse
     digitalWrite(TFT_RST, HIGH);
-    delay(10);
+    delay(20);
     digitalWrite(TFT_RST, LOW);
     delay(50);
     digitalWrite(TFT_RST, HIGH);
     delay(100);
 
-    // 3. Initialize Hardware SPI bus (SCK=5, MOSI=17) at 27 MHz
-    tftSPI.begin(TFT_SCLK, -1, TFT_MOSI, TFT_CS);
-    tftSPI.setFrequency(27000000);
+    // 3. Initialize VSPI bus (SCK=18, MOSI=23) at 27 MHz
+    SPI.begin(TFT_SCLK, -1, TFT_MOSI, TFT_CS);
+    SPI.setFrequency(27000000);
 
     // 4. Initialize ST7735 Display Driver
     tft.initR(ST7735_TAB_TYPE);
@@ -29,13 +28,13 @@ void initDisplay() {
     // 5. Set Landscape Rotation (160 wide x 128 high)
     tft.setRotation(1);
 
-    // 6. Diagnostic Startup Splash Test (RED -> GREEN -> BLUE -> BLACK)
+    // 6. Diagnostic Startup Flash (RED -> GREEN -> BLUE -> BLACK)
     tft.fillScreen(ST77XX_RED);
-    delay(150);
+    delay(200);
     tft.fillScreen(ST77XX_GREEN);
-    delay(150);
+    delay(200);
     tft.fillScreen(ST77XX_BLUE);
-    delay(150);
+    delay(200);
     tft.fillScreen(ST77XX_BLACK);
 }
 

@@ -16,13 +16,13 @@
 #define DEBOUNCE_DELAY_MS   50
 
 // ============================================================================
-// 3. 1.8" SPI TFT 128x160 (ST7735 V1.1) PIN MAP & TAB SELECTION
+// 3. 1.8" SPI TFT 128x160 (ST7735 V1.1) PIN MAP (VSPI Hardware SPI)
 // ============================================================================
-#define TFT_CS              16
-#define TFT_RST             2
-#define TFT_DC              4
-#define TFT_MOSI            17
-#define TFT_SCLK            5
+#define TFT_CS              5       // p5  (Chip Select)
+#define TFT_RST             17      // p17 (Reset)
+#define TFT_DC              4       // p4  (Data / Command Select)
+#define TFT_MOSI            23      // p23 (Hardware SPI MOSI)
+#define TFT_SCLK            18      // p18 (Hardware SPI SCK)
 
 // Tab Type Options: INITR_BLACKTAB, INITR_REDTAB, INITR_GREENTAB, INITR_144GREENTAB
 #define ST7735_TAB_TYPE     INITR_BLACKTAB
