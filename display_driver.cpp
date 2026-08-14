@@ -1,7 +1,7 @@
 #include "display_driver.h"
 #include <SPI.h>
 
-// Adafruit ST7735 using ESP32 Hardware SPI (&SPI) for maximum stability
+// Adafruit ST7735 using ESP32 Native Hardware VSPI (&SPI)
 static Adafruit_ST7735 tft = Adafruit_ST7735(&SPI, TFT_CS, TFT_DC, TFT_RST);
 
 void initDisplay() {
@@ -10,16 +10,19 @@ void initDisplay() {
     pinMode(TFT_DC, OUTPUT);
     pinMode(TFT_RST, OUTPUT);
 
+    digitalWrite(TFT_CS, HIGH);
+
     // 2. Hardware Reset Sequence
     digitalWrite(TFT_RST, HIGH);
-    delay(10);
+    delay(20);
     digitalWrite(TFT_RST, LOW);
-    delay(50);
-    digitalWrite(TFT_RST, HIGH);
     delay(100);
+    digitalWrite(TFT_RST, HIGH);
+    delay(150);
 
-    // 3. Initialize ESP32 Hardware SPI Bus (SCK=18, MOSI=23, CS=16)
+    // 3. Initialize ESP32 Native VSPI Hardware (SCK=18, MOSI=23, CS=5)
     SPI.begin(TFT_SCLK, -1, TFT_MOSI, TFT_CS);
+    SPI.setFrequency(10000000); // 10 MHz clock for breadboard stability
 
     // 4. Initialize ST7735 Display Driver
     tft.initR(ST7735_TAB_TYPE);
