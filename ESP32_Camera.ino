@@ -25,22 +25,24 @@ void setup() {
     // 1. Setup Shutter Button
     pinMode(BUTTON_PIN, INPUT_PULLUP);
 
-    // 2. Initialize ST7735 TFT Display FIRST (Shows screen & diagnostic test)
+    // 2. Initialize ST7735 TFT Display
     initDisplay();
     showWaitingScreen();
 
-    // 3. Initialize Bluetooth SPP Advertising
+    // 3. Power stabilization delay before turning on Bluetooth radio
+    delay(100);
+
+    // 4. Initialize Bluetooth SPP Advertising
     if (!initBluetooth()) {
         Serial.println("CRITICAL ERROR: Bluetooth initialization failed!");
     } else {
         Serial.println("Bluetooth Advertising as: ESP32-CAMERA");
     }
 
-    // 4. Initialize OV7670 Camera Hardware (Non-blocking if camera module is not attached yet)
+    // 5. Initialize OV7670 Camera (Non-blocking if camera is not attached yet)
     Serial.println("Attempting camera initialization...");
     if (!initCamera()) {
         Serial.println("WARNING: OV7670 Camera not detected or not connected yet.");
-        Serial.println("Display & Bluetooth will function normally for standalone screen testing!");
     } else {
         Serial.println("OV7670 Camera Initialized Successfully.");
     }

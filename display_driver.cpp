@@ -10,31 +10,23 @@ void initDisplay() {
     pinMode(TFT_DC, OUTPUT);
     pinMode(TFT_RST, OUTPUT);
 
-    // 2. Hardware Reset Pulse
+    // 2. Clean Hardware Reset Pulse
     digitalWrite(TFT_RST, HIGH);
-    delay(20);
+    delay(10);
     digitalWrite(TFT_RST, LOW);
-    delay(50);
+    delay(20);
     digitalWrite(TFT_RST, HIGH);
-    delay(100);
+    delay(50);
 
-    // 3. Initialize VSPI bus (SCK=18, MOSI=23) at 27 MHz
+    // 3. Initialize VSPI bus at 10 MHz (Prevents breadboard signal noise/flicker)
     SPI.begin(TFT_SCLK, -1, TFT_MOSI, TFT_CS);
-    SPI.setFrequency(27000000);
+    SPI.setFrequency(10000000);
 
     // 4. Initialize ST7735 Display Driver
     tft.initR(ST7735_TAB_TYPE);
 
     // 5. Set Landscape Rotation (160 wide x 128 high)
     tft.setRotation(1);
-
-    // 6. Diagnostic Startup Flash (RED -> GREEN -> BLUE -> BLACK)
-    tft.fillScreen(ST77XX_RED);
-    delay(200);
-    tft.fillScreen(ST77XX_GREEN);
-    delay(200);
-    tft.fillScreen(ST77XX_BLUE);
-    delay(200);
     tft.fillScreen(ST77XX_BLACK);
 }
 
