@@ -22,8 +22,8 @@ bool initCamera() {
     config.pin_reset    = RESET_GPIO_NUM;
 
     config.xclk_freq_hz = XCLK_FREQ_HZ;
-    config.pixel_format = PIXFORMAT_RGB565;
-    config.frame_size   = FRAMESIZE_QQVGA; // 160x120 pixels
+    config.pixel_format = PIXFORMAT_RGB565; // OV7670 native format
+    config.frame_size   = FRAMESIZE_QQVGA;  // 160x120 pixels for high FPS
     config.jpeg_quality = 12;
     config.fb_count     = 1;
     config.grab_mode    = CAMERA_GRAB_LATEST;
@@ -31,14 +31,14 @@ bool initCamera() {
 
     esp_err_t err = esp_camera_init(&config);
     if (err != ESP_OK) {
-        Serial.printf("OV7670 init failed with error 0x%x\n", err);
+        Serial.printf("OV7670 init failed: 0x%x\n", err);
         return false;
     }
 
     sensor_t * s = esp_camera_sensor_get();
     if (s != NULL) {
-        s->set_hmirror(s, 1); // Mirror horizontally for preview
-        s->set_vflip(s, 1);   // Orient image upright
+        s->set_hmirror(s, 1);
+        s->set_vflip(s, 1);
     }
 
     return true;
