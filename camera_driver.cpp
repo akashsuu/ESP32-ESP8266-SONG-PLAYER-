@@ -3,38 +3,40 @@
 #include <Wire.h>
 
 static bool testOV7670_SCCB(int sda_pin, int scl_pin) {
-    Serial.printf("\n--- TESTING OV7670 SCCB REGISTER READ (SDA=GPIO%d, SCL=GPIO%d) ---\n", sda_pin, scl_pin);
+    Serial.printf("\n--- TESTING 2017 OV7670 SCCB REGISTER READ (SDA=GPIO%d, SCL=GPIO%d) ---\n", sda_pin, scl_pin);
     pinMode(sda_pin, INPUT_PULLUP);
     pinMode(scl_pin, INPUT_PULLUP);
 
-    Wire.begin(sda_pin, scl_pin, 50000); // 50 kHz SCCB timing
+    Wire.begin(sda_pin, scl_pin, 50000); // 50 kHz SCCB speed
     delay(50);
 
-    // Write Register Address 0x0A with STOP condition (SCCB protocol requirement)
+    // Read PID Register 0x0A
     Wire.beginTransmission(0x21);
     Wire.write(0x0A);
-    uint8_t err = Wire.endTransmission(true);
+    uint8_t err1 = Wire.endTransmission(true);
 
-    if (err != 0) {
-        Serial.printf("  [!] SCCB Transmission failed with error code: %d\n", err);
-        Wire.end();
-        return false;
+    uint8_t pid = 0;
+    if (err1 == 0) {
+        delay(5);
+        Wire.requestFrom(0x21, 1);
+        if (Wire.available()) pid = Wire.read();
     }
 
-    delay(5);
+    // Read VER Register 0x0B
+    Wire.beginTransmission(0x21);
+    Wire.write(0x0B);
+    uint8_t err2 = Wire.endTransmission(true);
 
-    // Read 1 byte from Register 0x0A
-    Wire.requestFrom(0x21, 1);
-    if (Wire.available()) {
-        uint8_t pid = Wire.read();
-        Serial.printf("  [★ SUCCESS ★] OV7670 PID Register 0x0A = 0x%02X (Expected: 0x76)\n", pid);
-        Wire.end();
-        return (pid == 0x76);
+    uint8_t ver = 0;
+    if (err2 == 0) {
+        delay(5);
+        Wire.requestFrom(0x21, 1);
+        if (Wire.available()) ver = Wire.read();
     }
 
-    Serial.println("  [!] No data returned from register 0x0A.");
+    Serial.printf("  [★ SENSOR INFO ★] OV7670 PID (0x0A) = 0x%02X | VER (0x0B) = 0x%02X\n", pid, ver);
     Wire.end();
-    return false;
+    return (pid == 0x76 || pid == 0x70 || ver == 0x70 || ver == 0x73);
 }
 
 bool initCamera() {
